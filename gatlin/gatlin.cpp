@@ -1677,6 +1677,8 @@ pthread_rwlock_t dc_lock;
 
 InstructionSet *gatlin::discover_chks(Function *f, FunctionSet &visited) {
   InstructionSet *ret = NULL;
+	// visited here is no need to get lock, for this check discover 
+	// is single-thread
   if (visited.count(f)) {
     pthread_rwlock_rdlock(&dc_lock);
     if (f2chks_disc.count(f))
@@ -1737,6 +1739,11 @@ InstructionSet *gatlin::discover_chks(Function *f) {
   return ret;
 }
 
+// tianyu should change this function to:
+//        1. backward to find check
+//              1) if no check, continue to backward move, until reach syscall/other end
+//              2) if meet a check, refer to CapSet/IdSet of Sentry/Gofer, if pass, continue to backward, otherwise return
+//        2. reach syscall entry, add path to Path Set and increase counter (Map <Syscall, Sen_Function, counter>)
 void gatlin::backward_slice_build_callgraph(InstructionList &callgraph,
                                             Instruction *I,
                                             FunctionToCheckResult &fvisited,
@@ -2818,7 +2825,7 @@ void gatlin::process_cpgf(Module &module) {
   // exit(0);
   // pass 1
   errs() << "Collect all permission-checked variables and functions\n";
-  STOP_WATCH_MON(WID_0, collect_crits(module));
+  STOP_WATCH_MON(WID_0, collect_crits(module)); 
   errs() << "Collected " << critical_functions.size()
          << " critical functions\n";
   errs() << "Collected " << critical_variables.size()

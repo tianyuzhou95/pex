@@ -4,3 +4,4 @@ build
 .scopefile
 tags
 cscope.out
+test.log
